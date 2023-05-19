@@ -1,4 +1,4 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const express = require('express');
 const cors = require('cors');
 const app = express();
@@ -23,17 +23,36 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+    const indexKeys = {name: 1}
+    const indexOptions = {name: "nameIndex"}
     const toyCollections = client.db('toy-collection').collection('toy-details');
+    await toyCollections.createIndex(indexKeys, indexOptions);
+    app.get('/search',async(req,res) => {
+      const searchText = req.query.text;
+      console.log(searchText);
+      const filter = {name: {$regex: searchText,$options: "i"}}
+      const result = await toyCollections.find(filter).toArray();
+      res.send(result);
+    })
+
+    app.get('/toy/:id', async(req,res) => {
+        const id = req.params.id;
+        const filter = {_id : new ObjectId(id)};
+        const result = await toyCollections.findOne(filter);
+        // console.log(data);
+        res.send(result);
+    })
 
     app.post('/addToy', async(req,res) => {
         const data = req.body;
         const result = await toyCollections.insertOne(data);
-        console.log(data);
+        // console.log(data);
         res.send(result);
     })
+
     app.get('/allToy',async(req,res) => {
-        const result = await toyCollections.find().toArray();
+        const result = await toyCollections.find().limit(20).toArray();
         res.send(result);
     })
 
