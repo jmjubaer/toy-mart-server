@@ -58,8 +58,13 @@ async function run() {
 
     app.get('/myToy',async(req,res) => {
       const email = req.query.email;
+      const sortText = req.query.sort;
       const filter = {sellerEmail: email};
-      const result = await toyCollections.find(filter).toArray();
+      if(sortText == "Ascending"){
+        const result = await toyCollections.find(filter).sort({price: 1}).toArray();
+        return res.send(result)
+      }
+      const result = await toyCollections.find(filter).sort({price: -1}).toArray();
       res.send(result);
     });
 
@@ -83,6 +88,14 @@ async function run() {
       const result = await toyCollections.updateOne(filter,updatedDoc,option);
       res.send(result);
     })
+
+    app.get('/toyByCategory/:category',async(req,res) => {
+      const category = req.params.category;
+      const filter = {category: category}
+      const result = await toyCollections.find(filter).toArray();
+      res.send(result);
+    })
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
